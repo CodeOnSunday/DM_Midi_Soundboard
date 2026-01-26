@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <style>
+        table {
+            width: 19cm;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+        td {
+            border: solid 2px black;
+            width: {{width}}%;
+            text-align: center;
+            vertical-align: middle;
+        }
+        @media print {
+            table {
+                width: 19cm;
+                table-layout: fixed;
+                border-collapse: collapse;
+            }
+            td {
+                border: solid 2px black !important;
+                width: {{width}}%;
+                text-align: center;
+                vertical-align: middle;
+            }
+        }
+        </style>
+    </head>
+    <body>
+        <table>
+            {% for row in rows %}
+                <tr>
+                    {% for col in row %}
+                        <td>{{col}}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

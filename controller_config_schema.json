@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "ControllerChannel": {
+      "properties": {
+        "id_code": {
+          "title": "Id Code",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id_code",
+        "x"
+      ],
+      "title": "ControllerChannel",
+      "type": "object"
+    },
+    "ControllerEndpoint": {
+      "properties": {
+        "id_code": {
+          "title": "Id Code",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id_code"
+      ],
+      "title": "ControllerEndpoint",
+      "type": "object"
+    },
+    "ControllerKey": {
+      "properties": {
+        "id_code": {
+          "title": "Id Code",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id_code",
+        "x",
+        "y"
+      ],
+      "title": "ControllerKey",
+      "type": "object"
+    },
+    "MidiDevice": {
+      "properties": {
+        "input_id": {
+          "title": "Input Id",
+          "type": "integer"
+        },
+        "output_id": {
+          "title": "Output Id",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_id",
+        "output_id"
+      ],
+      "title": "MidiDevice",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "keys": {
+      "items": {
+        "$ref": "#/$defs/ControllerKey"
+      },
+      "title": "Keys",
+      "type": "array"
+    },
+    "channels": {
+      "items": {
+        "$ref": "#/$defs/ControllerChannel"
+      },
+      "title": "Channels",
+      "type": "array"
+    },
+    "master_channel": {
+      "$ref": "#/$defs/ControllerEndpoint"
+    },
+    "master_stop": {
+      "$ref": "#/$defs/ControllerEndpoint"
+    },
+    "device": {
+      "$ref": "#/$defs/MidiDevice"
+    }
+  },
+  "required": [
+    "keys",
+    "channels",
+    "master_channel",
+    "master_stop",
+    "device"
+  ],
+  "title": "ControllerConfig",
+  "type": "object"
+}

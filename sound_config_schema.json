@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "SoundEntry": {
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        },
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "file_select": {
+          "$ref": "#/$defs/SoundFileSelect",
+          "default": "sequence"
+        },
+        "mode": {
+          "$ref": "#/$defs/SoundPlayMode",
+          "default": "play_and_layer"
+        }
+      },
+      "required": [
+        "text",
+        "x",
+        "y",
+        "files"
+      ],
+      "title": "SoundEntry",
+      "type": "object"
+    },
+    "SoundFileSelect": {
+      "enum": [
+        "sequence",
+        "random"
+      ],
+      "title": "SoundFileSelect",
+      "type": "string"
+    },
+    "SoundPlayMode": {
+      "enum": [
+        "play_and_layer",
+        "play_and_pause",
+        "play_and_stop"
+      ],
+      "title": "SoundPlayMode",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "sounds": {
+      "items": {
+        "$ref": "#/$defs/SoundEntry"
+      },
+      "title": "Sounds",
+      "type": "array"
+    }
+  },
+  "required": [
+    "sounds"
+  ],
+  "title": "SoundConfig",
+  "type": "object"
+}
