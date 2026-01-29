@@ -43,8 +43,8 @@ The entry editor is used to create, edit or delete the sound configuration at a 
 * Set the [play mode](#sound-play-modes) and the [sequence](#sound-file-sequence).
 * Edit the sound files:
   * **Add** new sounds by drag and drop files from your file manager / file explorer into the listbox.
-  * **Delete** sounds from the list by selecting them and hitting the <u>Del</u>ete key.
-  * **Rearrange** the file list by selecting one or multiple entries to move and hitting the <u>Up</u> arrow or <u>Down</u> arrow key.
+  * **Delete** sounds from the list by selecting them and hitting the <ins>Del</ins>ete key.
+  * **Rearrange** the file list by selecting one or multiple entries to move and hitting the <ins>Up</ins> arrow or <ins>Down</ins> arrow key.
 * Close the window via the X in the top right corner to discard all changes.
 
 ![UI Entry](docs/Screenshot_EditEntry.png "Entry Editor")
@@ -61,7 +61,7 @@ The tool supports three different modes to play sound files.
 * After the current sound is finished, no new sound is played.
 * Best suited for short sound effects.
 
-<u>Color:</u> While any sound is playing, the key is colored red.
+<ins>Color:</ins> While any sound is playing, the key is colored red.
 
 **Play And Stop**
 
@@ -71,7 +71,7 @@ The tool supports three different modes to play sound files.
 * After the current sound is finished, the next sound is played.
 * Best suited for atmospheric background music.
 
-<u>Color:</u> While any sound is playing, the key is colored green.
+<ins>Color:</ins> While any sound is playing, the key is colored green.
 
 **Play And Pause**
 
@@ -81,9 +81,9 @@ The tool supports three different modes to play sound files.
   * If a sound is currently paused, it is continued.
 * After the current sound is finished, the next sound is played.
 * The only way to stop sounds playing in this mode is the global stop key.
-* <u>Every paused sound blocks one of the limited virtual audio channels from pygame. The number of available channels depends on your platform.</u>
+* <ins>Every paused sound blocks one of the limited virtual audio channels from pygame. The number of available channels depends on your platform.</ins>
 
-<u>Color:</u> 
+<ins>Color:</ins> 
 
 * While any sound is playing, the key is colored blue.
 * While any sound is paused, the key is colored blue with reduced brightness.
