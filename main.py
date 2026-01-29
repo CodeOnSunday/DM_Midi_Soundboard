@@ -6,7 +6,7 @@ import controller_config
 import sound_config
 from controller_manager import ControllerManager, Controller_SetVolume, Controller_KeyHit, Controller_MasterStop, Controller_MasterVolume, Controller_SetState
 from sound_manager import SoundManager, SoundEntryManager
-from ui_manager import run_ui, ask_for_soundboard_filename
+from ui_manager import run_ui, ask_for_soundboard_filename, show_notification
 
 if __name__ == "__main__":
     async def loop():
@@ -21,6 +21,12 @@ if __name__ == "__main__":
         cc = controller_config.get_controller_config()
         cm = ControllerManager(cc)
 
+        match cm.is_device_opened_successfully():
+            case [False, _]:
+                show_notification("Can't open midi device for input and output.")
+            case [True, False]:
+                show_notification("Can't open midi device for output. Colored keys are not available.")
+
         def config_changed_handler():
             sm.reload_changed_config()
 
@@ -32,7 +38,8 @@ if __name__ == "__main__":
         ui_thread = run_ui(
             sc, 
             dimensions=[8, 8], 
-            handler=config_changed_handler_call_func
+            handler=config_changed_handler_call_func,
+            get_disabled_buttons=sm.get_xy_for_disabled_channels
         )
 
         async def ui_waiter():

@@ -1,3 +1,5 @@
+"""This module just loads and dumps an config file to fill out any default fields and to check is the file is formatted correctly."""
+
 import sound_config
 import sys
 import yaml

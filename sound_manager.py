@@ -14,10 +14,15 @@ class SoundState:
 class SoundEntryManager:
     def __init__(self, config_ref: sound_config.SoundEntry):
         self.config_ref = config_ref
-        self.sound_obj = [
-            mixer.Sound(path)
-            for path in self.config_ref.files
-        ]
+        self.sound_obj: list[mixer.Sound] = []
+        try:
+            self.sound_obj = [
+                mixer.Sound(path)
+                for path in self.config_ref.files
+            ]
+            self.enabled = True
+        except Exception:
+            self.enabled = False
         self.playing_channels: list[mixer.Channel]  = []
         self.playing_channel_paused: bool = False
         self.sound_obj_play_idx: int = len(self.sound_obj) - 1
@@ -27,7 +32,12 @@ class SoundEntryManager:
             return True
         return False
     
+    def is_enabled(self) -> bool:
+        return self.enabled
+    
     def hit(self):
+        if not self.is_enabled():
+            return
         match self.config_ref.mode:
             case sound_config.SoundPlayMode.PLAY:
                 self.play_sound()
@@ -43,6 +53,8 @@ class SoundEntryManager:
                     self.play_sound()
 
     def get_next_sound_obj(self) -> mixer.Sound:
+        if not self.is_enabled():
+            return
         match self.config_ref.file_select:
             case sound_config.SoundFileSelect.SEQUENCE:
                 self.sound_obj_play_idx = (self.sound_obj_play_idx + 1) % len(self.sound_obj)
@@ -51,6 +63,8 @@ class SoundEntryManager:
         return self.sound_obj[self.sound_obj_play_idx]
 
     def set_volume(self, volume: float):
+        if not self.is_enabled():
+            return
         for so in self.sound_obj:
             so.set_volume(volume)
 
@@ -61,6 +75,8 @@ class SoundEntryManager:
         return self.playing_channel_paused
 
     def tick(self):
+        if not self.is_enabled():
+            return
         if not self.is_playing():
             return
         match self.config_ref.mode:
@@ -78,6 +94,8 @@ class SoundEntryManager:
         return False
 
     def play_sound(self):
+        if not self.is_enabled():
+            return
         sound = self.get_next_sound_obj()
         if self.config_ref.mode in [sound_config.SoundPlayMode.PLAY_AND_PAUSE, sound_config.SoundPlayMode.PLAY_AND_STOP]:
             self.stop()
@@ -85,21 +103,29 @@ class SoundEntryManager:
         self.playing_channel_paused = False
 
     def stop(self):
+        if not self.is_enabled():
+            return
         for channel in self.playing_channels:
             channel.fadeout(200)
         self.playing_channels.clear()
 
     def pause(self):
+        if not self.is_enabled():
+            return
         for channel in self.playing_channels:
             channel.pause()
         self.playing_channel_paused = True
 
     def unpause(self):
+        if not self.is_enabled():
+            return
         for channel in self.playing_channels:
             channel.unpause()
         self.playing_channel_paused = False
 
     def toggle_pause(self):
+        if not self.is_enabled():
+            return
         if self.playing_channel_paused:
             self.unpause()
         else:
@@ -140,6 +166,13 @@ class SoundManager:
             sem = SoundEntryManager(sound_conf)
             x, y = sem.get_xy()
             get_x(x)[y] = sem
+
+    def get_xy_for_disabled_channels(self) -> list[tuple[int, int]]:
+        result = []
+        for sound in self.iterate_sounds():
+            if not sound.is_enabled():
+                result.append(sound.get_xy())
+        return result
 
     def set_change_handler(self, handler):
         self.change_handler = handler

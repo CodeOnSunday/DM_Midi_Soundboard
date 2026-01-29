@@ -13,6 +13,8 @@ class SoundFileSelect(str, enum.Enum):
     RANDOM = 'random'
 
 class SoundEntry(BaseModel):
+    """The entry to describe one sound effect."""
+
     text: str
     x: int
     y: int
@@ -24,28 +26,20 @@ class SoundConfig(BaseModel):
     sounds: list[SoundEntry] = []
 
 def get_sound_config(path: str):
+    """
+    Load the configuration from the given path.
+    """
     with open(path, "r") as ifile:
         return SoundConfig(
             **yaml.load(ifile, Loader=yaml.FullLoader)
         )
     
 if __name__ == "__main__":
+    """Export the schema file for the sound configuration."""
+    
     with open("sound_config_schema.json", "w") as ofile:
         json.dump(
             SoundConfig.model_json_schema(),
             ofile,
             indent=2
         )
-    
-    se = SoundEntry(
-        text="A",
-        x=0,y=0,
-        files=[],
-        mode=SoundPlayMode.PLAY,
-        file_select=SoundFileSelect.SEQUENCE
-    )
-    print(se)
-    print(type(se))
-    se.mode = SoundPlayMode("play_and_layer")
-    print(se)
-    print(type(se))

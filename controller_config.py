@@ -2,6 +2,8 @@
 from pydantic import BaseModel
 import json
 import yaml
+import sys
+import pathlib
 
 class ControllerEndpoint(BaseModel):
     """A midi event with a id code."""
@@ -32,7 +34,11 @@ class ControllerConfig(BaseModel):
 
 def get_controller_config() -> ControllerConfig:
     """Open and return the default controller configuration yaml file."""
-    with open("controller_config.yaml", "r") as ifile:
+    config_file = pathlib.Path("controller_config.yaml")
+    if hasattr(sys, "_MEIPASS"):
+        config_file = pathlib.Path(sys._MEIPASS) / config_file
+        
+    with open(config_file, "r") as ifile:
         return ControllerConfig(
             **yaml.load(ifile, Loader=yaml.FullLoader)
         )

@@ -2,6 +2,7 @@ import sound_config
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter.messagebox import showwarning
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 from tkinterdnd2 import DND_FILES, TkinterDnD
 import threading
@@ -102,7 +103,12 @@ class UiEntryManager:
             files = self.top.tk.splitlist(event.data)
             paths = [pathlib.Path(file) for file in files]
             ref_path = pathlib.Path(__file__).parent
-            rel_paths = [ path.relative_to(ref_path) for path in paths]
+            def try_to_rel(path: pathlib.Path) -> pathlib.Path:
+                try:
+                    return path.relative_to(ref_path, walk_up=True)
+                except ValueError:
+                    return path
+            rel_paths = [ try_to_rel(path) for path in paths]
             for path in rel_paths:
                 files_listbox.insert(tk.END, str(path))
 
@@ -161,12 +167,13 @@ class UiEntryManager:
             self.top.destroy()
 
 class UiManager:
-    def __init__(self, parent, config_ref: sound_config.SoundConfig, dimensions: tuple[int, int], handler: Callable[[], None]):
+    def __init__(self, parent, config_ref: sound_config.SoundConfig, dimensions: tuple[int, int], handler: Callable[[], None], get_disabled_buttons: Callable[[], list[tuple[int,int]]]):
         self.parent = parent
 
         self.config_ref = config_ref
         self.dim = dimensions
         self.changed_handler = handler
+        self.get_disabled_buttons = get_disabled_buttons
 
         self.parent.title("GM Midi Soundboard")
         
@@ -174,8 +181,6 @@ class UiManager:
         self.button_frame.pack(fill="both", expand=True)
         self.button_frame.grid_columnconfigure(list(range(dimensions[0])), weight=1)
         self.button_frame.grid_rowconfigure(list(range(dimensions[1])), weight=1)
-        # self.button_frame.bind("<ButtonPress-1>", partial(self.on_mouse_down))
-        # self.button_frame.bind("<ButtonRelease-1>", partial(self.on_mouse_up))        
 
         self.save_btn = tk.Button(self.parent, text="Save", command=self.on_save_handler)
         self.save_btn.pack(padx=5, pady=7)
@@ -285,6 +290,8 @@ class UiManager:
                     self.config_ref.sounds.append(diag.result)
                     self._call_changed_handler()
             del diag
+
+        disabled_buttons = self.get_disabled_buttons()
         
         for xi in range(self.dim[0]):
             for yi in range(self.dim[1]):
@@ -292,6 +299,8 @@ class UiManager:
                 kwargs = {
                     "text": se.text if se is not None else "-",
                 }
+                if (xi, yi) in disabled_buttons:
+                    kwargs["bg"] = "lightgray"
                 if se is None:
                     kwargs["command"] = partial(open_dialog_for_new_entry, xi, yi)
                 else:
@@ -319,3 +328,6 @@ def run_ui(*args, **kwargs):
 
 def ask_for_soundboard_filename() -> str | None:
     return askopenfilename(filetypes=[("Soundboard YAML", "*.yaml")])
+
+def show_notification(text): 
+    showwarning("Warning", text)
