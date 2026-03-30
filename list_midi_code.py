@@ -8,8 +8,10 @@ for i in range(midi.get_count()):
     info = midi.get_device_info(i)
     print(i, info)
 
-print(f"Open default midi device ({midi.get_default_input_id()})")
-device = midi.Input(midi.get_default_input_id())
+default_id = midi.get_default_input_id()
+dev_id = input(f"Enter device id to open input device (default: {default_id})")
+dev_id = int(dev_id)
+device = midi.Input(dev_id)
 try:
     while True:
         evt_lst = device.read(1)

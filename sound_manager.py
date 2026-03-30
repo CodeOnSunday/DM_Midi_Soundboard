@@ -2,6 +2,7 @@ import sound_config
 from pygame import mixer
 from random import randint
 from dataclasses import dataclass
+import os
 
 mixer.init()
 
@@ -14,18 +15,16 @@ class SoundState:
 class SoundEntryManager:
     def __init__(self, config_ref: sound_config.SoundEntry):
         self.config_ref = config_ref
-        self.sound_obj: list[mixer.Sound] = []
-        try:
-            self.sound_obj = [
-                mixer.Sound(path)
-                for path in self.config_ref.files
-            ]
-            self.enabled = True
-        except Exception:
-            self.enabled = False
+        self.sound_list: list[str] = self.config_ref.files
+        self.enabled = True
+        for sound in self.sound_list:
+            if not os.path.exists(sound):
+                self.enabled = False
+        self.volume: float =  1.0
         self.playing_channels: list[mixer.Channel]  = []
         self.playing_channel_paused: bool = False
-        self.sound_obj_play_idx: int = len(self.sound_obj) - 1
+        self.sound_obj_play_idx: int = len(self.sound_list) - 1
+        self.current_sound: mixer.Sound = None
 
     def is_at_position(self, x: int, y: int) -> bool:
         if x == self.config_ref.x and y == self.config_ref.y:
@@ -57,16 +56,22 @@ class SoundEntryManager:
             return
         match self.config_ref.file_select:
             case sound_config.SoundFileSelect.SEQUENCE:
-                self.sound_obj_play_idx = (self.sound_obj_play_idx + 1) % len(self.sound_obj)
+                self.sound_obj_play_idx = (self.sound_obj_play_idx + 1) % len(self.sound_list)
             case sound_config.SoundFileSelect.RANDOM:
-                self.sound_obj_play_idx = randint(0, len(self.sound_obj)-1)
-        return self.sound_obj[self.sound_obj_play_idx]
+                self.sound_obj_play_idx = randint(0, len(self.sound_list)-1)
+        sound_path = self.sound_list[self.sound_obj_play_idx]
+        print(f"Playing: {sound_path}")
+        sound = mixer.Sound(sound_path)
+        sound.set_volume(self.volume)
+        self.current_sound = sound
+        return sound
 
     def set_volume(self, volume: float):
+        self.volume = volume
         if not self.is_enabled():
             return
-        for so in self.sound_obj:
-            so.set_volume(volume)
+        if self.current_sound is not None:
+            self.current_sound.set_volume(volume)
 
     def is_playing(self):
         return len(self.playing_channels) > 0
