@@ -13,7 +13,13 @@ The controller I work with is the AKAI Professional APC mini MK2, which has a 8x
 
 ### Connecting To The Right Device
 
+Every midi device connected to your system gets one or multiple unique ids. 
 
+To find the ids of all connected devices, the python script '*list_midi_code.py*' can be used.
+
+To configure the device to connect to, set the right unique id in the *controller_config.yaml* file at the <ins>logical</ins> position like in the example below.
+
+![Device_ID](docs/Screenshot_DeviceIds.png "Device ID Entries")
 
 ## UI - Main Window
 

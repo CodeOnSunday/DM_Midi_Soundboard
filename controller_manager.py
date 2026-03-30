@@ -193,3 +193,17 @@ class ControllerManager:
             self.output_device.write_short(cmd, pad_id, color)
         except KeyError:
             pass
+
+def get_midi_device_list():
+    result = []
+    for i in range(midi.get_count()):
+        di = midi.get_device_info(i)
+        result.append({
+            "Id": i,
+            "Interface": di[0],
+            "Name": di[1].decode(),
+            "Input": di[2],
+            "Output": di[3],
+            "Opened": di[4]
+        })
+    return result

@@ -2,15 +2,17 @@ import sound_config
 
 import tkinter as tk
 from tkinter import ttk
-from tkinter.messagebox import showwarning
+from tkinter.messagebox import showwarning, showinfo
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 from tkinterdnd2 import DND_FILES, TkinterDnD
 import threading
 from functools import partial
 import pathlib
-from typing import Callable
+from typing import Callable, Any
 import yaml
 import jinja2
+from enum import Enum
+from queue import Queue
 
 class UiEntryManager:
     def __init__(self, parent, config_ref: sound_config.SoundEntry):
@@ -166,24 +168,36 @@ class UiEntryManager:
         if self.top is not None:
             self.top.destroy()
 
+class UiManagerRequests(Enum):
+    GET_SOUND_ERROR_POSITIONS=0,
+    RELOAD_AFTER_CONFIG_CHANGE=1,
+    GET_MIDI_DEVICES=2,
+    GET_DEVICE_OPEN_STATE=3
+
 class UiManager:
-    def __init__(self, parent, config_ref: sound_config.SoundConfig, dimensions: tuple[int, int], handler: Callable[[], None], get_disabled_buttons: Callable[[], list[tuple[int,int]]]):
+    def __init__(self, parent, config_ref: sound_config.SoundConfig, dimensions: tuple[int, int], request_handler: Callable[[UiManagerRequests], Any]):
         self.parent = parent
 
         self.config_ref = config_ref
         self.dim = dimensions
-        self.changed_handler = handler
-        self.get_disabled_buttons = get_disabled_buttons
+        self.request_handler = request_handler
 
         self.parent.title("GM Midi Soundboard")
+
+        menu = tk.Menu(self.parent)
+        self.parent.config(menu=menu)
+        filemenu = tk.Menu(menu)
+        menu.add_cascade(label="File", menu=filemenu)
+        filemenu.add_command(label="New", command=self.new_sound_file)
+        filemenu.add_command(label="Open", command=self.open_sound_file)
+        filemenu.add_command(label="Save", command=self.on_save_handler)
+        filemenu.add_separator()
+        filemenu.add_command(label="List Midi Devices", command=self.show_midi_devices)
         
         self.button_frame = tk.Frame(self.parent)
         self.button_frame.pack(fill="both", expand=True)
         self.button_frame.grid_columnconfigure(list(range(dimensions[0])), weight=1)
         self.button_frame.grid_rowconfigure(list(range(dimensions[1])), weight=1)
-
-        self.save_btn = tk.Button(self.parent, text="Save", command=self.on_save_handler)
-        self.save_btn.pack(padx=5, pady=7)
 
         self.reload_changed_config()
         self.parent.eval('tk::PlaceWindow . center')
@@ -192,7 +206,36 @@ class UiManager:
 
         self.drag_btn = None
 
-    def on_save_handler(self, *args):
+        device_open_state = self.request_handler(UiManagerRequests.GET_DEVICE_OPEN_STATE)
+        match device_open_state:
+            case [False, _]:
+                showwarning("Warning", "Can't open midi device for input and output.", parent=self.parent)
+            case [True, False]:
+                showwarning("Warning", "Can't open midi device for output. Colored keys are not available.", parent=self.parent)
+
+        self.open_sound_file()
+
+    def new_sound_file(self):
+        self.config_ref.sounds.clear()
+        self._call_changed_handler()
+
+    def open_sound_file(self):
+        filename = askopenfilename(filetypes=[("Soundboard YAML", "*.yaml")])
+        if len(filename) > 0:
+            sc = sound_config.get_sound_config(filename)
+            self.config_ref.sounds = sc.sounds
+            self._call_changed_handler()
+
+    def show_midi_devices(self):
+        device_list = self.request_handler(UiManagerRequests.GET_MIDI_DEVICES)
+        message_text = "List of input devices:\n"
+        message_text += "\n".join([f"{e['Id']}: {e['Name']}" for e in filter(lambda e: e["Input"], device_list)])
+        message_text += "\n"
+        message_text += "List of output devices:\n"
+        message_text += "\n".join([f"{e['Id']}: {e['Name']}" for e in filter(lambda e: e["Output"], device_list)])
+        showinfo("List of Midi Devices", message_text, parent=self.parent)
+
+    def on_save_handler(self):
         filename = asksaveasfilename(initialfile="Soundboard.yaml", defaultextension=".yaml", filetypes=[("Soundboard YAML", "*.yaml")])
         if len(filename) > 0:
             with open(filename, "w") as f:
@@ -222,9 +265,8 @@ class UiManager:
                 f.write(html)
 
     def _call_changed_handler(self):
+        self.request_handler(UiManagerRequests.RELOAD_AFTER_CONFIG_CHANGE)
         self.reload_changed_config()
-        if self.changed_handler is not None:
-            self.changed_handler()
 
     def find_entry_for_xy(self, x: int, y: int) -> sound_config.SoundEntry | None:
         for sound in self.config_ref.sounds:
@@ -291,7 +333,7 @@ class UiManager:
                     self._call_changed_handler()
             del diag
 
-        disabled_buttons = self.get_disabled_buttons()
+        disabled_buttons = self.request_handler(UiManagerRequests.GET_SOUND_ERROR_POSITIONS)
         
         for xi in range(self.dim[0]):
             for yi in range(self.dim[1]):
@@ -326,8 +368,11 @@ def run_ui(*args, **kwargs):
     thread.start()
     return thread
 
-def ask_for_soundboard_filename() -> str | None:
-    return askopenfilename(filetypes=[("Soundboard YAML", "*.yaml")])
-
-def show_notification(text): 
-    showwarning("Warning", text)
+def create_async_request_handler(event_loop, handler):
+    def async_func(request, q, *args):
+        q.put(handler(request, *args))
+    def thread_func(request, *args):
+        q = Queue()
+        event_loop.call_soon_threadsafe(async_func, request, q, *args)
+        return q.get()
+    return thread_func

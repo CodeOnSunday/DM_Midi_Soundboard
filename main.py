@@ -1,45 +1,35 @@
 """The main entry point to the tool which combines all the different modules."""
 from asyncio import run, get_event_loop, sleep, create_task, wait, FIRST_COMPLETED
-from functools import partial
 
 import controller_config
 import sound_config
-from controller_manager import ControllerManager, Controller_SetVolume, Controller_KeyHit, Controller_MasterStop, Controller_MasterVolume, Controller_SetState
+from controller_manager import ControllerManager, Controller_SetVolume, Controller_KeyHit, Controller_MasterStop, Controller_MasterVolume, Controller_SetState, get_midi_device_list
 from sound_manager import SoundManager, SoundEntryManager
-from ui_manager import run_ui, ask_for_soundboard_filename, show_notification
+from ui_manager import run_ui, UiManagerRequests, create_async_request_handler
 
 if __name__ == "__main__":
     async def loop():
-        filename = ask_for_soundboard_filename()
-        if len(filename) == 0:
-            sc = sound_config.SoundConfig()
-        else:
-            sc = sound_config.get_sound_config(filename)
-        
+        sc = sound_config.SoundConfig()
         sm = SoundManager(sc)
 
         cc = controller_config.get_controller_config()
         cm = ControllerManager(cc)
 
-        match cm.is_device_opened_successfully():
-            case [False, _]:
-                show_notification("Can't open midi device for input and output.")
-            case [True, False]:
-                show_notification("Can't open midi device for output. Colored keys are not available.")
-
-        def config_changed_handler():
-            sm.reload_changed_config()
-
-        config_changed_handler_call_func = partial(
-            get_event_loop().call_soon_threadsafe,
-            config_changed_handler
-        )
-
+        def request_handler(request: UiManagerRequests, *args):
+            match request:
+                case UiManagerRequests.GET_SOUND_ERROR_POSITIONS:
+                    return sm.get_xy_for_disabled_sounds()
+                case UiManagerRequests.RELOAD_AFTER_CONFIG_CHANGE:
+                    sm.reload_changed_config()
+                case UiManagerRequests.GET_MIDI_DEVICES:
+                    return get_midi_device_list()
+                case UiManagerRequests.GET_DEVICE_OPEN_STATE:
+                    return cm.is_device_opened_successfully()
+                
         ui_thread = run_ui(
             sc, 
             dimensions=[8, 8], 
-            handler=config_changed_handler_call_func,
-            get_disabled_buttons=sm.get_xy_for_disabled_channels
+            request_handler=create_async_request_handler(get_event_loop(), request_handler),
         )
 
         async def ui_waiter():

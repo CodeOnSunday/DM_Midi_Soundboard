@@ -167,7 +167,7 @@ class SoundManager:
             x, y = sem.get_xy()
             get_x(x)[y] = sem
 
-    def get_xy_for_disabled_channels(self) -> list[tuple[int, int]]:
+    def get_xy_for_disabled_sounds(self) -> list[tuple[int, int]]:
         result = []
         for sound in self.iterate_sounds():
             if not sound.is_enabled():
